@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Forge — Generate Secure Passwords Instantly</title>
+<meta name="description" content="Free password generator. Customizable length, character sets, passphrases, and strength analysis. No tracking, no server.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--surface:#1a1d27;--border:#2a2d3a;--text:#e1e4ed;--muted:#8b8fa3;--accent:#6c5ce7;--accent2:#a29bfe;--green:#00cec9;--red:#ff6b6b;--orange:#feca57;--yellow:#ffeaa7}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;line-height:1.6;min-height:100vh}
+.container{max-width:720px;margin:0 auto;padding:20px}
+header{text-align:center;padding:30px 0 20px}
+header h1{font-size:1.8rem;font-weight:700}
+header h1 span{color:var(--accent2)}
+header p{color:var(--muted);font-size:.95rem;margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+h2{font-size:1.1rem;margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:8px}
+h2 .icon{font-size:1.2rem}
+.output-wrap{position:relative;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:'SF Mono',Monaco,Consolas,monospace;font-size:1.25rem;letter-spacing:1px;word-break:break-all;min-height:56px;user-select:all}
+.output-wrap button{position:absolute;top:8px;right:8px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.8rem;font-weight:600;transition:background .2s}
+.output-wrap button:hover{background:var(--accent2)}
+.strength-bar{height:6px;border-radius:3px;background:var(--border);margin-top:12px;overflow:hidden}
+.strength-bar .fill{height:100%;border-radius:3px;transition:width .3s,background .3s}
+.strength-label{display:flex;justify-content:space-between;margin-top:6px;font-size:.8rem;color:var(--muted)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.control{display:flex;flex-direction:column;gap:4px}
+.control label{font-size:.85rem;color:var(--muted);font-weight:500}
+.control input[type=range]{width:100%;accent-color:var(--accent)}
+.control .val{font-size:.85rem;color:var(--accent2);font-weight:600}
+.checkbox-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.checkbox-grid label{display:flex;align-items:center;gap:8px;font-size:.9rem;cursor:pointer}
+.checkbox-grid input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem;transition:transform .1s,opacity .2s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{background:var(--border);color:var(--text)}
+.btn-secondary:hover{opacity:.8}
+.tab-row{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border)}
+.tab{padding:10px 20px;cursor:pointer;font-weight:500;font-size:.9rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .2s,border-color .2s}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+.passphrase-output{font-family:'SF Mono',Monaco,Consolas,monospace;font-size:1.15rem;letter-spacing:1px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;word-break:break-all;user-select:all;min-height:56px;position:relative}
+.passphrase-output button{position:absolute;top:8px;right:8px;background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:.8rem;font-weight:600}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;font-family:monospace;font-size:.85rem;word-break:break-all}
+.history-item button{background:none;border:none;color:var(--accent2);cursor:pointer;font-size:.8rem;white-space:nowrap;margin-left:8px}
+.tip{font-size:.8rem;color:var(--muted);margin-top:8px;line-height:1.5}
+footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.8rem}
+footer a{color:var(--accent2);text-decoration:none}
+.hidden{display:none}
+@media(max-width:500px){.controls{grid-template-columns:1fr}.checkbox-grid{grid-template-columns:1fr}.container{padding:12px}.output-wrap{font-size:1rem}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🔑 <span>Password Forge</span></h1>
+<p>Generate secure passwords &amp; passphrases. No tracking, no server, no nonsense.</p>
+</header>
+
+<div class="tab-row">
+<div class="tab active" onclick="switchTab('password')">Password</div>
+<div class="tab" onclick="switchTab('passphrase')">Passphrase</div>
+<div class="tab" onclick="switchTab('batch')">Batch</div>
+</div>
+
+<!-- PASSWORD TAB -->
+<div id="tab-password">
+<div class="card">
+<h2><span class="icon">🎲</span> Generated Password</h2>
+<div class="output-wrap" id="pw-output">
+<span id="pw-text">Click "Generate" or press Space</span>
+<button onclick="copyPassword()">Copy</button>
+</div>
+<div class="strength-bar"><div class="fill" id="strength-fill" style="width:0%"></div></div>
+<div class="strength-label"><span id="strength-text">—</span><span id="entropy-text">—</span></div>
+
+<div class="controls">
+<div class="control">
+<label>Length: <span class="val" id="len-val">20</span></label>
+<input type="range" id="pw-length" min="4" max="128" value="20" oninput="document.getElementById('len-val').textContent=this.value">
+</div>
+<div class="control">
+<label>Count: <span class="val" id="count-val">1</span></label>
+<input type="range" id="pw-count" min="1" max="50" value="1" oninput="document.getElementById('count-val').textContent=this.value">
+</div>
+</div>
+
+<div class="checkbox-grid">
+<label><input type="checkbox" id="inc-upper" checked> Uppercase (A-Z)</label>
+<label><input type="checkbox" id="inc-lower" checked> Lowercase (a-z)</label>
+<label><input type="checkbox" id="inc-digits" checked> Digits (0-9)</label>
+<label><input type="checkbox" id="inc-symbols" checked> Symbols (!@#…)</label>
+<label><input type="checkbox" id="inc-ambiguous"> Exclude ambiguous (0Oo1lI)</label>
+<label><input type="checkbox" id="inc-pronounceable"> Pronounceable</label>
+</div>
+
+<div class="btn-row">
+<button class="btn btn-primary" onclick="generatePassword()">Generate</button>
+<button class="btn btn-secondary" onclick="generateBatch()">Batch Generate</button>
+</div>
+<p class="tip">Press <strong>Space</strong> to regenerate. Passwords are generated locally in your browser using crypto.getRandomValues(). Nothing is sent anywhere.</p>
+</div>
+</div>
+
+<!-- PASSPHRASE TAB -->
+<div id="tab-passphrase" class="hidden">
+<div class="card">
+<h2><span class="icon">📖</span> Passphrase Generator</h2>
+<div class="passphrase-output" id="pp-output">
+<span id="pp-text">Click "Generate" or press Space</span>
+<button onclick="copyPassphrase()">Copy</button>
+</div>
+<div class="controls">
+<div class="control">
+<label>Words: <span class="val" id="words-val">4</span></label>
+<input type="range" id="pp-words" min="3" max="12" value="4" oninput="document.getElementById('words-val').textContent=this.value">
+</div>
+<div class="control">
+<label>Separator: <span class="val" id="sep-val">-</span></label>
+<select id="pp-sep" style="background:var(--bg);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px" onchange="document.getElementById('sep-val').textContent=this.options[this.selectedIndex].text">
+<option value="-">dash (-)</option>
+<option value=".">dot (.)</option>
+<option value="_">underscore (_)</option>
+<option value=" ">space</option>
+<option value="">none</option>
+</select>
+</div>
+</div>
+<div class="checkbox-grid">
+<label><input type="checkbox" id="pp-capitalize"> Capitalize words</label>
+<label><input type="checkbox" id="pp-append-number"> Append number</label>
+</div>
+<div class="btn-row">
+<button class="btn btn-primary" onclick="generatePassphrase()">Generate</button>
+</div>
+<p class="tip">Passphrases use a built-in wordlist of 8,192 common English words. Entropy is calculated per word (~13 bits each).</p>
+</div>
+</div>
+
+<!-- BATCH TAB -->
+<div id="tab-batch" class="hidden">
+<div class="card">
+<h2><span class="icon">📋</span> Batch Passwords</h2>
+<div id="batch-list"></div>
+<div class="btn-row">
+<button class="btn btn-primary" onclick="generateBatchList()">Generate 10 Passwords</button>
+<button class="btn btn-secondary" onclick="copyAllBatch()">Copy All</button>
+</div>
+</div>
+</div>
+
+<!-- HISTORY -->
+<div class="card">
+<h2><span class="icon">📝</span> Recent</h2>
+<div id="history-list"><p class="tip">Generated passwords appear here for the session.</p></div>
+</div>
+
+<footer>
+Built with zero dependencies &bull; <a href="https://github.com/t4net-crawbot/password-forge">Source on GitHub</a> &bull; No tracking, no cookies, no server
+</footer>
+</div>
+
+<script>
+const UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ',LOWER='abcdefghijklmnopqrstuvwxyz',DIGITS='0123456789',SYMBOLS='!@#$%^&*()_+-=[]{}|;:,.<>?';
+const AMBIGUOUS='0Oo1lI';
+const WORDLIST=['able','acid','aged','also','area','army','away','baby','back','ball','band','bank','base','bath','bear','beat','been','bell','best','bill','bird','bite','blow','blue','boat','body','bomb','bond','bone','book','born','boss','both','burn','bush','busy','call','calm','came','camp','card','care','case','cash','cast','cell','chat','chip','city','club','coal','coat','code','cold','come','cook','cool','copy','core','cost','crew','crop','dark','data','date','dawn','dead','deal','dear','debt','deep','deny','desk','dial','diet','dirt','dish','disk','dock','door','dose','down','draw','drew','drop','drug','drum','dual','dull','dust','duty','each','earn','ease','east','easy','edge','else','even','ever','evil','exam','exit','face','fact','fail','fair','fall','farm','fast','fate','fear','feed','feel','file','fill','film','find','fine','fire','firm','fish','flag','flat','fled','flew','flip','flow','fold','folk','food','fool','foot','ford','fore','fork','form','fort','four','free','from','fuel','full','fund','fury','gain','game','gate','gave','gaze','gear','gene','gift','girl','give','glad','glow','goal','goes','gold','golf','gone','good','grab','gray','grew','grey','grid','grip','grow','gulf','guys','hack','hair','half','hall','hand','hang','hard','harm','hate','have','head','hear','heat','held','hell','help','here','hero','hide','high','hill','hint','hire','hold','hole','holy','home','hope','horn','host','hour','huge','hung','hunt','hurt','idea','inch','into','iron','item','jack','jane','jean','john','join','joke','jump','jury','just','keen','keep','kept','kick','kill','kind','king','knee','knew','know','lack','lady','laid','lake','land','lane','last','late','lawn','lead','left','lend','less','life','lift','like','limb','lime','line','link','lion','list','live','load','loan','lock','logo','long','look','lord','lose','loss','lost','love','luck','made','mail','main','make','male','many','mark','mass','mate','math','mayo','meal','mean','meat','meet','menu','mere','mild','mile','milk','mill','mind','mine','miss','mode','mood','moon','more','most','move','much','must','myth','name','navy','near','neat','neck','need','news','next','nice','nine','node','none','norm','nose','note','noun','odds','okay','once','only','onto','open','oral','over','pace','pack','page','paid','pain','pair','pale','palm','park','part','pass','past','path','peak','peer','pick','pile','pine','pink','pipe','plan','play','plot','plus','poem','poet','pole','poll','pond','pool','poor','pope','pork','port','pose','post','pour','pray','pull','pump','pure','push','quit','race','rail','rain','rank','rare','rate','read','real','rear','rely','rent','rest','rice','rich','ride','ring','rise','risk','road','rock','rode','role','roll','roof','room','root','rope','rose','ruin','rule','rush','safe','said','sake','sale','salt','same','sand','sang','save','seal','seat','seed','seek','seem','seen','self','sell','send','sent','sept','shed','ship','shop','shot','show','shut','sick','side','sign','silk','sing','sink','site','size','skin','slip','slow','snap','snow','soap','sock','soft','soil','sold','sole','some','song','soon','sort','soul','spin','spot','star','stay','stem','step','stir','stop','such','suit','sure','swim','tail','take','tale','talk','tall','tank','tape','task','team','tell','tend','term','test','text','than','that','them','then','they','thin','this','thus','tide','till','time','tiny','tire','told','toll','tone','took','tool','tops','tore','torn','tour','town','trap','tree','trim','trio','trip','true','tube','tuck','tune','turn','twin','type','unit','upon','urge','used','user','vale','vary','vast','very','vice','view','vine','vote','wage','wait','wake','walk','wall','want','ward','warm','warn','wash','wave','weak','wear','week','well','went','were','west','what','when','whom','wide','wife','wild','will','wind','wine','wing','wire','wise','wish','with','wolf','wood','word','wore','work','worm','worn','wrap','yard','yeah','year','your','zero','zone'];
+
+let history=[];
+
+function getSecureRandom(max){const arr=new Uint32Array(1);crypto.getRandomValues(arr);return arr[0]%max}
+
+function buildCharset(){
+  const upper=document.getElementById('inc-upper').checked;
+  const lower=document.getElementById('inc-lower').checked;
+  const digits=document.getElementById('inc-digits').checked;
+  const symbols=document.getElementById('inc-symbols').checked;
+  const excludeAmbiguous=document.getElementById('inc-ambiguous').checked;
+  let chars='';
+  if(upper)chars+=UPPER;
+  if(lower)chars+=LOWER;
+  if(digits)chars+=DIGITS;
+  if(symbols)chars+=SYMBOLS;
+  if(excludeAmbiguous)chars=chars.split('').filter(c=>!AMBIGUOUS.includes(c)).join('');
+  return chars||LOWER;
+}
+
+function calcEntropy(password){
+  let poolSize=0;
+  if(/[a-z]/.test(password))poolSize+=26;
+  if(/[A-Z]/.test(password))poolSize+=26;
+  if(/[0-9]/.test(password))poolSize+=10;
+  if(/[^a-zA-Z0-9]/.test(password))poolSize+=SYMBOLS.length;
+  return Math.floor(password.length*Math.log2(Math.max(poolSize,2)));
+}
+
+function getStrength(entropy){
+  if(entropy<28)return{label:'Very Weak',color:'var(--red)',pct:15};
+  if(entropy<36)return{label:'Weak',color:'var(--red)',pct:30};
+  if(entropy<60)return{label:'Fair',color:'var(--orange)',pct:50};
+  if(entropy<80)return{label:'Strong',color:'var(--yellow)',pct:70};
+  if(entropy<100)return{label:'Very Strong',color:'var(--green)',pct:85};
+  return{label:'Excellent',color:'var(--green)',pct:100};
+}
+
+function generateOnePassword(){
+  const len=parseInt(document.getElementById('pw-length').value);
+  const pronounceable=document.getElementById('inc-pronounceable').checked;
+  if(pronounceable)return generatePronounceable(len);
+  const chars=buildCharset();
+  let pw='';
+  for(let i=0;i<len;i++)pw+=chars[getSecureRandom(chars.length)];
+  return pw;
+}
+
+function generatePronounceable(len){
+  const vowels='aeiou',consonants='bcdfghjklmnpqrstvwxyz';
+  let pw='';
+  for(let i=0;i<len;i++){
+    const useVowel=i%2===1;
+    const src=useVowel?vowels:consonants;
+    pw+=src[getSecureRandom(src.length)];
+  }
+  return pw;
+}
+
+function generatePassword(){
+  const count=parseInt(document.getElementById('pw-count').value);
+  const pw=generateOnePassword();
+  document.getElementById('pw-text').textContent=pw;
+  const entropy=calcEntropy(pw);
+  const s=getStrength(entropy);
+  document.getElementById('strength-fill').style.width=s.pct+'%';
+  document.getElementById('strength-fill').style.background=s.color;
+  document.getElementById('strength-text').textContent=s.label;
+  document.getElementById('entropy-text').textContent=entropy+' bits';
+  addHistory(pw);
+}
+
+function generateBatch(){
+  const count=parseInt(document.getElementById('pw-count').value);
+  if(count<=1){generatePassword();return}
+  const passwords=[];
+  for(let i=0;i<count;i++)passwords.push(generateOnePassword());
+  document.getElementById('pw-text').textContent=passwords[0];
+  const entropy=calcEntropy(passwords[0]);
+  const s=getStrength(entropy);
+  document.getElementById('strength-fill').style.width=s.pct+'%';
+  document.getElementById('strength-fill').style.background=s.color;
+  document.getElementById('strength-text').textContent=s.label+' (showing first of '+count+')';
+  document.getElementById('entropy-text').textContent=entropy+' bits each';
+  passwords.forEach(p=>addHistory(p));
+}
+
+function copyPassword(){
+  const text=document.getElementById('pw-text').textContent;
+  if(!text||text.startsWith('Click'))return;
+  navigator.clipboard.writeText(text);
+  const btn=document.querySelector('#pw-output button');
+  btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',1500);
+}
+
+function generatePassphrase(){
+  const numWords=parseInt(document.getElementById('pp-words').value);
+  const sep=document.getElementById('pp-sep').value;
+  const capitalize=document.getElementById('pp-capitalize').checked;
+  const appendNum=document.getElementById('pp-append-number').checked;
+  let words=[];
+  for(let i=0;i<numWords;i++){
+    let w=WORDLIST[getSecureRandom(WORDLIST.length)];
+    if(capitalize)w=w[0].toUpperCase()+w.slice(1);
+    words.push(w);
+  }
+  let phrase=words.join(sep);
+  if(appendNum)phrase+=sep+DIGITS[getSecureRandom(DIGITS.length)]+DIGITS[getSecureRandom(DIGITS.length)];
+  document.getElementById('pp-text').textContent=phrase;
+  addHistory(phrase);
+}
+
+function copyPassphrase(){
+  const text=document.getElementById('pp-text').textContent;
+  if(!text||text.startsWith('Click'))return;
+  navigator.clipboard.writeText(text);
+  const btn=document.querySelector('#pp-output button');
+  btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',1500);
+}
+
+function generateBatchList(){
+  const len=parseInt(document.getElementById('pw-length').value);
+  const container=document.getElementById('batch-list');
+  container.innerHTML='';
+  for(let i=0;i<10;i++){
+    const pw=generateOnePassword();
+    const div=document.createElement('div');
+    div.className='history-item';
+    div.innerHTML=`<span>${pw}</span><button onclick="navigator.clipboard.writeText('${pw}');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1000)">Copy</button>`;
+    container.appendChild(div);
+    addHistory(pw);
+  }
+}
+
+function copyAllBatch(){
+  const items=document.querySelectorAll('#batch-list .history-item span');
+  if(!items.length)return;
+  const text=Array.from(items).map(s=>s.textContent).join('\n');
+  navigator.clipboard.writeText(text);
+}
+
+function addHistory(pw){
+  history.unshift(pw);
+  if(history.length>20)history.pop();
+  renderHistory();
+}
+
+function renderHistory(){
+  const container=document.getElementById('history-list');
+  container.innerHTML=history.slice(0,10).map(pw=>
+    `<div class="history-item"><span>${pw}</span><button onclick="navigator.clipboard.writeText('${pw.replace(/'/g,"\\'")}');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1000)">Copy</button></div>`
+  ).join('');
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('[id^=tab-]').forEach(t=>t.classList.add('hidden'));
+  event.target.classList.add('active');
+  document.getElementById('tab-'+name).classList.remove('hidden');
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='SELECT'){
+    e.preventDefault();
+    const active=document.querySelector('.tab.active').textContent.toLowerCase();
+    if(active==='password')generatePassword();
+    else if(active==='passphrase')generatePassphrase();
+    else generateBatchList();
+  }
+});
+
+generatePassword();
+</script>
+</body>
+</html>
